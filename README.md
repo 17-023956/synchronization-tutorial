@@ -167,4 +167,59 @@ ThreadNew(“Writer”, Writer, 3, buffers, emptyBuffers, fullBuffers);
 ThreadNew(“Reader”, Reader, 3, buffers, emptyBuffers, fullBuffers);
 RunAllThreads();
 SemaphoreFree(emptyBuffers);
-SemaphoreFree(fullBuf
+SemaphoreFree(fullBuf);
+///////////////////////////////////**********************************/////////////////////////////
+/*finding the minimum of tickets booked and finding the passengers for that*/
+#include<stdio.h>
+#include<sys/types.h>
+#include<sys/shm.h>
+#include<sys/ipc.h>
+#include "headsem.h"
+#include "headfork.h"
+
+main()
+{
+    int min,np,a[10];
+    int *lock1,*finalmin;
+    int id,n,i,sid1,sid2;
+
+    sid1=shmget(IPC_PRIVATE,10,0666|IPC_CREAT);
+    lock1=(int *)shmat(sid1,0,0);
+
+    sid2=shmget(IPC_PRIVATE,10,0666|IPC_CREAT);
+    finalmin=(int *)shmat(sid2,0,0);
+
+//    *finalmin=0;
+
+    printf("Enter the num of tickets for that date to be sold :");
+    scanf("%d",&n);
+
+    printf("Enter the array elements i,e tickets :");
+    for(i=0;i<n;i++)
+        scanf("%d",&a[i]);
+
+    printf("Enter the no.of proc :");
+    scanf("%d",&np);
+
+    lock_init(lock1);
+
+    id=p_fork(np);
+    min=a[0];
+    
+    for(i=id;i<n;i+=np)
+    {
+        if(a[i]<min)
+            min=a[i];
+    }
+
+    locksem(lock1);
+    *finalmin=min;
+    if(min < *finalmin)
+        *finalmin=min;
+
+    unlock(lock1);
+
+    p_join(np,id);
+    printf("minimum : %d",*finalmin);
+}
+/////////////////////////////////////*******************************************//////////////////
